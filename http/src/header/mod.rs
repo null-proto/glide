@@ -42,6 +42,8 @@ pub enum Version {
 
 impl<'a> Parse<'a> for HeaderMap<'a> {
   fn parse(s:&'a [u8]) -> Result<Self,error::Error> where Self : Sized {
+    let mut lines = str::from_utf8(s).map_err(|_|error::Error::HeaderParse)?.split("\r\n");
+    let status = lines.next().ok_or(error::Error::HeaderParse)?.split(' ');
     todo!()
   }
 }
