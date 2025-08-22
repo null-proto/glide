@@ -1,4 +1,4 @@
-use std::error::Error as StdError;
+// use std::error::Error as StdError;
 
 #[derive(Debug)]
 pub enum Error {
@@ -6,6 +6,8 @@ pub enum Error {
   UnknownMethod,
   UriParse,
   HeaderParse,
+  QueriParse,
+  NoQueri,
 }
 
 // impl StdError for Error {
