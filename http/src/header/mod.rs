@@ -1,13 +1,15 @@
 #![allow(unused)]
 
-use crate::error;
+use crate::{error, header::uri::Uri};
 use std::{collections::HashMap, str::FromStr};
 
-pub mod uri;
 pub mod field;
+pub mod uri;
 
 pub trait Parse<'a> {
-  fn parse(s:&'a [u8]) -> Result<Self,error::Error> where Self : Sized;
+  fn parse(s: &'a [u8]) -> Result<Self, error::Error>
+  where
+    Self: Sized;
 }
 
 #[derive(Default, Debug)]
@@ -15,7 +17,7 @@ pub struct HeaderMap<'a> {
   method: Method,
   uri: uri::Uri<'a>,
   version: Version,
-  map: HashMap<String, String>,
+  map: Option<HashMap<&'a str, &'a str>>,
 }
 
 #[derive(Default, Debug)]
@@ -41,10 +43,39 @@ pub enum Version {
 }
 
 impl<'a> Parse<'a> for HeaderMap<'a> {
-  fn parse(s:&'a [u8]) -> Result<Self,error::Error> where Self : Sized {
-    let mut lines = str::from_utf8(s).map_err(|_|error::Error::HeaderParse)?.split("\r\n");
-    let status = lines.next().ok_or(error::Error::HeaderParse)?.split(' ');
-    todo!()
+  fn parse(s: &'a [u8]) -> Result<Self, error::Error>
+  where
+    Self: Sized,
+  {
+    let mut lines = str::from_utf8(s)
+      .map_err(|_| error::Error::HeaderParse)?
+      .split("\r\n");
+    let mut status = lines.next().ok_or(error::Error::HeaderParse)?.split(' ');
+    let method = status
+      .next()
+      .ok_or(error::Error::HeaderParse)?
+      .parse::<Method>()?;
+    let uri = Uri::parse(status.next().ok_or(error::Error::HeaderParse)?.as_bytes())?;
+    let version = status
+      .next()
+      .ok_or(error::Error::HeaderParse)?
+      .parse::<Version>()?;
+    let map: Option<HashMap<&str, &str>> = lines
+      .map(|kv| {
+        if kv.trim().is_empty() {
+          None
+        } else {
+          kv.split_once('=')
+        }
+      })
+      .collect();
+
+    Ok(Self {
+      method,
+      uri,
+      version,
+      map,
+    })
   }
 }
 
@@ -80,13 +111,16 @@ impl FromStr for Version {
 
 #[cfg(test)]
 mod test {
+  use crate::header::Parse;
+
   use super::{HeaderMap, error};
 
   #[test]
   fn unit_test_header_map() {
     let req_string =
-      "GET / HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n";
-    // let header_map: Result<HeaderMap, error::Error> = req_string.parse();
-    // println!("header::test::\n{:?}", header_map.unwrap());
+      "GET / HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n"
+        .as_bytes();
+    let header_map: Result<HeaderMap, error::Error> = HeaderMap::parse(req_string);
+    println!("header::test::\n{:?}", header_map.unwrap());
   }
 }

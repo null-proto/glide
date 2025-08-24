@@ -2,7 +2,7 @@ use std::{net::TcpStream, sync::Arc};
 use std::io::Read;
 
 
-pub fn read_request(stream: &mut TcpStream) -> Arc<[u8]> {
+pub fn read_request_bytes(stream: &mut TcpStream) -> Arc<[u8]> {
   let mut buf = [0; 512];
   let mut req = vec![];
 
