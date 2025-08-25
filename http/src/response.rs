@@ -1,12 +1,12 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::header::{Version, status::Status};
+use crate::header::{self, status::Status, Version};
 
 pub struct Response<'a> {
   version: Version,
   status: Status,
-  map: HashMap<&'a str, &'a str>,
-  body: Option<Arc<[u8]>>
+  map: HashMap<&'a str, String>,
+  body: Option<&'a [u8]>
 }
 
 impl<'a> Response<'a> {
@@ -15,18 +15,29 @@ impl<'a> Response<'a> {
     self
   }
 
-  pub fn insert(mut self, key: &'a str, value: &'a str) -> Self {
+  pub fn insert(mut self, key: &'a str, value: String) -> Self {
     self.map.insert(key, value);
     self
   }
 
-  pub fn serialize(&self) -> &'a [u8] {
-    let status_line: Vec<u8> = [&*self.version, &self.status.0.to_string(), &*self.status]
+  pub fn add_body(&mut self , c : &'a [u8]) {
+    self.map.insert(header::field::CONTENT_LENGTH , c.len().to_string());
+    self.body = Some(c);
+  }
+
+  pub fn serialize(&self) -> Vec<u8> {
+    let mut ser: Vec<u8> = [&*self.version, &self.status.0.to_string(), &*self.status]
       .join(" ")
       .into();
 
+    for (k,v) in self.map.iter() {
+      ser.extend_from_slice(&[k.as_bytes() , ": ".as_bytes(), v.as_bytes() , "\r\n".as_bytes()].concat());
+    }
+    ser.extend_from_slice("\r\n".as_bytes());
 
-
-    todo!()
+    if let Some(body) = &self.body {
+      ser.extend_from_slice(body);
+    }
+    ser
   }
 }
