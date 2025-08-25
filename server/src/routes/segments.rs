@@ -2,12 +2,13 @@ use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct Segment<'a> {
-  tree: HashMap<&'a str, SegmentType<'a>>,
+  pub(crate) tree: HashMap<&'a str, SegmentType<'a>>,
 }
 
 pub enum SegmentType<'a> {
   SubTree(Segment<'a>),
   FUNC(fn()),
+  Path(&'a str),
   ID(&'a str),
 }
 
@@ -16,7 +17,13 @@ pub enum UriType<'a> {
   ID(&'a str),
 }
 
-impl<'a> Segment<'a> {
+trait Builder<'a> {
+  fn parser_uri(uri: &str) -> Vec<UriType<'_>>;
+  fn merge(self, key: &'a str, rhs: Self) -> Self;
+  fn add_method(self, key: &'a str, func: fn()) -> Self;
+}
+
+impl<'a> Builder<'a> for Segment<'a> {
   fn parser_uri(uri: &str) -> Vec<UriType<'_>> {
     match uri.trim_matches('/') {
       "" => {
@@ -41,22 +48,39 @@ impl<'a> Segment<'a> {
   }
 
   fn merge(mut self, key: &'a str, rhs: Self) -> Self {
-
     let uri = Self::parser_uri(key);
 
-    loop {
-      let mut i = uri.iter().peekable();
-      match i.next() {
-        Some(UriType::Path(a)) => {
-          
-        }
-        Some(UriType::ID(a)) => {}
+    let tree = &self.tree;
 
-        _ => {
-          break;
-        }
+    for i in uri.iter() {
+      match i {
+        UriType::Path(a) => {
+          tree.get(a)
+        },
+
+        UriType::ID(a) => {}
       }
     }
+
+    // for i in uri.iter() {
+    //   match i {
+    //     UriType::Path(a) => {
+    //       if let Some(k) = tree.get_mut(a) {
+    //         *k = SegmentType::SubTree(Segment::default());
+    //       } else {
+    //         tree.insert(a, SegmentType::SubTree(Segment::default()));
+    //       }
+    //     }
+    //
+    //     UriType::ID(a) => {
+    //       if let Some(k) = tree.get_mut(a) {
+    //         *k = SegmentType::SubTree(Segment::default());
+    //       } else {
+    //         tree.insert(a, SegmentType::SubTree(Segment::default()));
+    //       }
+    //     }
+    //   }
+    // }
 
     self.tree.insert(key, SegmentType::SubTree(rhs));
     self
@@ -67,4 +91,3 @@ impl<'a> Segment<'a> {
     self
   }
 }
-
