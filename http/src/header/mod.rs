@@ -1,10 +1,11 @@
 #![allow(unused)]
 
 use crate::{error, header::uri::Uri};
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, ops::Deref, str::FromStr};
 
 pub mod field;
 pub mod uri;
+pub mod status;
 
 pub trait Parse<'a> {
   fn parse(s: &'a [u8]) -> Result<Self, error::Error>
@@ -14,10 +15,10 @@ pub trait Parse<'a> {
 
 #[derive(Default, Debug)]
 pub struct HeaderMap<'a> {
-  method: Method,
-  uri: uri::Uri<'a>,
-  version: Version,
-  map: Option<HashMap<&'a str, &'a str>>,
+  pub method: Method,
+  pub(crate) uri: uri::Uri<'a>,
+  pub version: Version,
+  pub map: Option<HashMap<&'a str, &'a str>>,
 }
 
 #[derive(Default, Debug)]
@@ -79,6 +80,22 @@ impl<'a> Parse<'a> for HeaderMap<'a> {
   }
 }
 
+impl Deref for Method {
+  type Target = str;
+  fn deref(&self) -> &Self::Target {
+    match &self {
+      Self::GET => &"GET",
+      Self::HEAD => &"HEAD",
+      Self::POST => &"POST",
+      Self::PUT => &"PUT",
+      Self::DELETE => &"DELETE",
+      Self::CONNECT => &"CONNECT",
+      Self::OPTIONS => &"OPTIONS",
+      Self::TRACE => &"TRACE",
+    }
+  }
+}
+
 impl FromStr for Method {
   type Err = error::Error;
   fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -92,6 +109,18 @@ impl FromStr for Method {
       "OPTIONS" => Ok(Self::OPTIONS),
       "TRACE" => Ok(Self::TRACE),
       _ => Err(error::Error::UnknownMethod),
+    }
+  }
+}
+
+impl Deref for Version {
+  type Target = str;
+  fn deref(&self) -> &Self::Target {
+    match self {
+      Self::HTTP1 => &"HTTP/1.0",
+      Self::HTTP11 => &"HTTP/1.1",
+      Self::H2 => &"H2",
+      Self::H3 => &"H3"
     }
   }
 }

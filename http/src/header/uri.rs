@@ -4,8 +4,8 @@ use crate::{error::Error, header::Parse};
 
 #[derive(Default, Debug, Clone)]
 pub struct Uri<'a> {
-  path: &'a str,
-  query: Option<HashMap<&'a str, &'a str>>,
+  pub(crate) path: &'a str,
+  pub(crate) query: Option<HashMap<&'a str, &'a str>>,
 }
 
 impl<'a> Parse<'a> for Uri<'a> {

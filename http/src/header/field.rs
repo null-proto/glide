@@ -1,3 +1,6 @@
+// Response
+const DATE: &'static str = "Date";
+
 // Representation Data and Metadata
 const HOST: &'static str = "Host";
 const CONTENT_TYPE: &'static str = "Content-Type";

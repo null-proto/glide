@@ -1,4 +1,8 @@
-pub(crate) mod segments;
+use std::net::TcpStream;
+
+use http::request::Request;
+
+pub(crate) mod tree;
 
 
 // Router
@@ -17,6 +21,20 @@ pub(crate) mod segments;
 //
 
 pub struct Router {
+}
 
+impl Router {
+  fn route<'a>( stream : TcpStream, req : Request ) {
+
+    match req.get_uri() {
+      "/" => {
+
+      }
+
+
+
+      _ => {}
+    }
+  }
 }
 
