@@ -1,5 +1,6 @@
 // Response
 pub const DATE: &'static str = "Date";
+pub const CONNECTION: &'static str = "Connection";
 
 // Representation Data and Metadata
 pub const HOST: &'static str = "Host";
