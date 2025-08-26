@@ -13,3 +13,5 @@ members = [ "glide", "http" , "server"]
 [workspace.dependencies]
 server = { path = "./server/"}
 http = { path = "./http/"}
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["tracing"] }

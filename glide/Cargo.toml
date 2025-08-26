@@ -5,3 +5,5 @@ edition = "2024"
 
 [dependencies]
 server = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

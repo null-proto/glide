@@ -1,6 +1,7 @@
-use std::net::TcpStream;
+use std::{io::Write, net::TcpStream};
 
-use http::request::Request;
+use http::{header, request::Request, response::{Response, Serialize}};
+use tracing::trace;
 
 pub(crate) mod tree;
 
@@ -24,16 +25,40 @@ pub struct Router {
 }
 
 impl Router {
-  fn route<'a>( stream : TcpStream, req : Request ) {
+  pub(crate) fn route<'a>(&mut self, mut stream : TcpStream, req : Request ) {
 
     match req.get_uri() {
       "/" => {
+        let res = Response::builder()
+          .insert(header::field::CONNECTION, "Close".to_owned())
+          .status(200)
+          .add_body(b"hello!?");
+
+        let _ = stream.write(&res.serialize()).map_err(|i| {
+          trace!("disconnected on write: {:?}",i.kind());
+        });
+
+        let _ = stream.flush().map_err(|i| {
+          trace!("disconnected on flush: {:?}",i.kind());
+        });
 
       }
 
 
 
-      _ => {}
+      _ => {
+        let res = Response::builder()
+          .insert(header::field::CONNECTION, "Close".to_owned())
+          .status(404);
+
+        let _ = stream.write(&res.serialize()).map_err(|i| {
+          trace!("disconnected on write: {:?}",i.kind());
+        });
+
+        let _ = stream.flush().map_err(|i| {
+          trace!("disconnected on flush: {:?}",i.kind());
+        });
+      }
     }
   }
 }

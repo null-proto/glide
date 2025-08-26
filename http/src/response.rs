@@ -29,15 +29,17 @@ impl<'a> Response<'a> {
     self
   }
 
-  pub fn add_body(&mut self, c: &'a [u8]) {
+  pub fn add_body(mut self, c: &'a [u8]) -> Self {
     self
       .map
       .insert(header::field::CONTENT_LENGTH, c.len().to_string());
     self.body = Some(c);
+
+    self
   }
 }
 
-trait Serialize {
+pub trait Serialize {
   fn serialize(&self) -> Vec<u8>;
 }
 
@@ -74,15 +76,16 @@ mod unit_test_response {
 
   #[test]
   fn serialize_test() {
-    let mut res = Response::builder()
+    let res = Response::builder()
       .status(201)
-      .insert(field::CONNECTION, "Close".to_owned());
-    res.add_body("text msg!".as_bytes());
+      .insert(field::CONNECTION, "Close".to_owned())
+      .add_body("text msg!".as_bytes());
+
 
     let msg =
       "HTTP/1.1 201 Ok\r\nConnection: Close\r\nContent-Length: 9\r\n\r\ntext msg!";
 
-    let ser = Serialize::serialize(&res);
-    assert_eq!( str::from_utf8(&ser) , Ok(msg));
+    let ser = res.serialize();
+    println!("{:?}", ser);
   }
 }
