@@ -46,10 +46,13 @@ impl Router {
 
 
 
+
+
       _ => {
         let res = Response::builder()
           .insert(header::field::CONNECTION, "Close".to_owned())
-          .status(404);
+          .insert(header::field::LOCATION, "/".to_owned())
+          .status(301);
 
         let _ = stream.write(&res.serialize()).map_err(|i| {
           trace!("disconnected on write: {:?}",i.kind());
