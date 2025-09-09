@@ -5,7 +5,8 @@ use crate::{error::Error, header::Parse};
 #[derive(Default, Debug, Clone)]
 pub struct Uri<'a> {
   pub(crate) path: &'a str,
-  pub(crate) query: Option<HashMap<&'a str, &'a str>>,
+  pub raw: Option<&'a str>,
+  pub query: Option<HashMap<&'a str, &'a str>>,
 }
 
 impl<'a> Parse<'a> for Uri<'a> {
@@ -35,11 +36,13 @@ impl<'a> Parse<'a> for Uri<'a> {
 
         Ok(Self {
           path: path,
+          raw: Some(query_str),
           query: a,
         })
       }
       None => Ok(Self {
         path: s,
+        raw: None,
         query: None,
       }),
     }

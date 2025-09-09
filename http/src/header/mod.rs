@@ -16,7 +16,7 @@ pub trait Parse<'a> {
 #[derive(Default, Debug)]
 pub struct HeaderMap<'a> {
   pub method: Method,
-  pub(crate) uri: uri::Uri<'a>,
+  pub uri: uri::Uri<'a>,
   pub version: Version,
   pub map: Option<HashMap<&'a str, &'a str>>,
 }
@@ -66,7 +66,7 @@ impl<'a> Parse<'a> for HeaderMap<'a> {
         if kv.trim().is_empty() {
           None
         } else {
-          kv.split_once('=')
+          kv.split_once(':').map(|i| (i.0.trim(),i.1.trim()))
         }
       })
       .collect();

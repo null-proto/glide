@@ -2,7 +2,7 @@ use std::{net::TcpStream, os::fd::{AsRawFd, FromRawFd}, process::{Command, Stdio
 
 
 pub fn http_backend<'a>(
-  method: &'static str,
+  method: &'a str,
   path_info: &'a str,
   query: &'a str,
   project_dir: &'static str,

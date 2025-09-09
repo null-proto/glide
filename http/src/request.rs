@@ -60,4 +60,23 @@ w
     assert_eq!(req.get_uri(), "/index.html/e");
     assert_eq!(*req.get_query().unwrap().get("x").unwrap(), "0");
   }
+
+
+  #[test]
+  fn test_request_g() {
+    let sample = "\
+GET /d/er.git/info/refs?service=git-upload-pack HTTP/1.1\r
+Host: [::1]:8000\r
+User-Agent: git/2.51.0\r
+Accept: */*\r
+Accept-Encoding: deflate, gzip, br, zstd\r
+Accept-Language: en-US, *;q=0.9\r
+Pragma: no-cacher\r
+Git-Protocol: version=2\r
+\r
+";
+    let req = Request::parse(sample.as_bytes()).unwrap();
+    assert_eq!(req.get_uri(), "/d/er.git/info/refs");
+    assert_eq!(*req.get_query().unwrap().get("service").unwrap(), "git-upload-pack");
+  }
 }
