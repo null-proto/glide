@@ -21,11 +21,11 @@ pub(crate) mod tree;
 //  tree = tree
 //
 
-pub struct Router {
-}
+pub struct Router;
+
 
 impl Router {
-  pub(crate) fn route<'a>(&mut self, mut stream : TcpStream, req : Request ) {
+  pub(crate) async fn route<'a>(&mut self, mut stream : TcpStream, req : Request<'a> ) {
 
     match req.get_uri() {
       "/" => {

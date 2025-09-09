@@ -1,6 +1,6 @@
 use std::net::TcpListener;
 
-use http::header::{self, HeaderMap, Parse};
+use http::{header::{self, HeaderMap, Parse}, request::Request};
 use tracing::{info, trace};
 
 use crate::{preludes::{read_body, read_request_bytes}, routes::Router};
@@ -9,26 +9,30 @@ pub mod git;
 pub mod preludes;
 pub mod routes;
 
-pub fn serve(listener: TcpListener) {
+pub async fn serve(listener: TcpListener) {
   let mut router = Router{};
   info!("server started");
 
-  while let Ok(mut stream) = listener.accept() {
-    trace!("connection from {:?}", stream.1);
-    let req_b = read_request_bytes(&mut stream.0);
-    let header_map = HeaderMap::parse(&req_b).map_err(|e| {
-      trace!("header parse error {:?}", e);
-    }).unwrap();
+  while let Ok((mut stream , peer)) = listener.accept() {
+    trace!("connection from {:?}", peer);
+    let req_b = read_request_bytes(&mut stream);
 
-    let mut req = http::request::Request { header: header_map, body: None };
+    if let Ok(header) = HeaderMap::parse(&req_b) {
+      let mut req = Request { header: header, body: None };
 
     if let Some(map) = &req.header.map {
       if let Some(len) = map.get(header::field::CONTENT_LENGTH) {
         trace!("body with length {:?}", len);
-        req.body = Some(read_body(&mut stream.0, len.parse::<usize>().unwrap() ));
+        req.body = Some(read_body(&mut stream, len.parse::<usize>().unwrap() ));
       }
     }
 
-    router.route(stream.0, req);
-  }
+    router.route(stream, req).await;
+
+    } else {
+      trace!("invalid header http/1.1");
+      trace!("colosing connection peer: {}", peer);
+      let _ = stream.shutdown(std::net::Shutdown::Both);
+    }
+  } 
 }
