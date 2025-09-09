@@ -47,7 +47,6 @@ impl Router {
 
 
 
-
       _ => {
         let res = Response::builder()
           .insert(header::field::CONNECTION, "Close".to_owned())
