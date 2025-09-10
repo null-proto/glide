@@ -1,8 +1,6 @@
 use std::{net::TcpStream, sync::Arc};
 use std::io::Read;
 
-use http::request::Request;
-use http::response::Response;
 use tracing::trace;
 
 

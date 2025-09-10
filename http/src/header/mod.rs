@@ -4,8 +4,8 @@ use crate::{error, header::uri::Uri};
 use std::{collections::HashMap, ops::Deref, str::FromStr};
 
 pub mod field;
-pub mod uri;
 pub mod status;
+pub mod uri;
 
 pub trait Parse<'a> {
   fn parse(s: &'a [u8]) -> Result<Self, error::Error>
@@ -61,21 +61,23 @@ impl<'a> Parse<'a> for HeaderMap<'a> {
       .next()
       .ok_or(error::Error::HeaderParse)?
       .parse::<Version>()?;
-    let map: Option<HashMap<&str, &str>> = lines
+
+    let map: HashMap<&str, &str> = lines
       .map(|kv| {
         if kv.trim().is_empty() {
           None
         } else {
-          kv.split_once(':').map(|i| (i.0.trim(),i.1.trim()))
+          kv.split_once(':').map(|i| (i.0.trim(), i.1.trim()))
         }
       })
+      .flatten()
       .collect();
 
     Ok(Self {
       method,
       uri,
       version,
-      map,
+      map: Some(map),
     })
   }
 }
@@ -120,7 +122,7 @@ impl Deref for Version {
       Self::HTTP1 => &"HTTP/1.0",
       Self::HTTP11 => &"HTTP/1.1",
       Self::H2 => &"H2",
-      Self::H3 => &"H3"
+      Self::H3 => &"H3",
     }
   }
 }
@@ -140,7 +142,7 @@ impl FromStr for Version {
 
 #[cfg(test)]
 mod test {
-  use crate::header::Parse;
+  use crate::header::{Parse, field};
 
   use super::{HeaderMap, error};
 
@@ -150,6 +152,16 @@ mod test {
       "GET / HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n"
         .as_bytes();
     let header_map: Result<HeaderMap, error::Error> = HeaderMap::parse(req_string);
-    println!("header::test::\n{:?}", header_map.unwrap());
+    // println!("header::test::\n{:?}", header_map.unwrap());
+
+    assert!(
+      header_map
+        .unwrap()
+        .map
+        .unwrap()
+        .get(field::USER_AGENT)
+        .unwrap()
+        .starts_with("curl/")
+    )
   }
 }

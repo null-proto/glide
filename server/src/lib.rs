@@ -4,7 +4,7 @@ use http::{
   header::{self, HeaderMap, Parse},
   request::Request,
 };
-use tracing::{info, trace};
+use tracing::{info, trace, warn};
 
 use crate::{
   preludes::{read_body, read_request_bytes},
@@ -39,7 +39,7 @@ pub fn serve(listener: TcpListener) {
 
       router.route(stream, req);
     } else {
-      trace!("invalid header http/1.1");
+      warn!("invalid header http/1.1");
       trace!("colosing connection peer: {}", peer);
       let _ = stream.shutdown(std::net::Shutdown::Both);
     }

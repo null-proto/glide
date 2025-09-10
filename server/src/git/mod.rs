@@ -1,17 +1,26 @@
-use std::{net::TcpStream, os::fd::{AsRawFd, FromRawFd}, process::{Command, Stdio}};
+use std::{
+  io, net::TcpStream, os::fd::AsFd, process::{Command, Stdio}
+};
 
+use tracing::{info, trace};
 
+#[allow(unused_mut)]
 pub fn http_backend<'a>(
   method: &'a str,
   path_info: &'a str,
   query: &'a str,
   project_dir: &'static str,
-  stream : &mut TcpStream
-) {
-  let stdin = unsafe { Stdio::from_raw_fd( stream.as_raw_fd()) };
-  let stdout = unsafe { Stdio::from_raw_fd( stream.as_raw_fd()) };
+  mut stream: TcpStream,
+) -> Result<(), io::Error> {
 
-  let git = Command::new("git http-backend")
+  trace!("REQUEST_METHOD: {} GIT_PROJECT_ROOT: {} PATH_INFO: {} QUERY_STRING: {}", method , project_dir , path_info , query);
+
+  let stdin = Stdio::from( stream.as_fd().try_clone_to_owned()? );
+  let stdout = Stdio::from( stream.as_fd().try_clone_to_owned()? );
+
+  let _git = Command::new("git")
+    .current_dir(project_dir)
+    .arg("http-backend")
     .env("REQUEST_METHOD", method)
     .env("GIT_PROJECT_ROOT", project_dir)
     .env("PATH_INFO", path_info)
@@ -19,22 +28,18 @@ pub fn http_backend<'a>(
     .env("QUERY_STRING", query)
     .stdout(stdout)
     .stdin(stdin)
-    .spawn();
+    .spawn()?;
 
-  match git {
+  info!("sock :{:?}", stream.as_fd());
 
-    _ => {}
-  }
-
+  Ok(())
 }
-
 
 pub fn create_bare<'a>(
   path_info: &'a str,
   project_dir: &'static str,
-) -> Result<() , std::io::Error> {
-
-  let path = format!("{}/{}" ,project_dir , path_info );
+) -> Result<(), std::io::Error> {
+  let path = format!("{}/{}", project_dir, path_info);
 
   let _ = Command::new(path).spawn()?;
   let _ = Command::new("git init -m master --bare").spawn()?;
