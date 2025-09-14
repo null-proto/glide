@@ -2,7 +2,7 @@ use crate::header2::bytes::{ByteMap, Bytes, TryStr};
 use std::sync::Arc;
 
 ///  `Uri( start , end , path , option<query_string> , oprion<query_map> )`
-#[derive(Debug)]
+#[derive(Debug , Clone)]
 pub struct Uri<'a>(Arc<[u8]> ,usize, usize, Bytes, Option<Bytes>, Option<ByteMap<'a>>);
 
 impl<'a> Uri<'a> {
@@ -107,6 +107,13 @@ mod header2_uri_unit_test {
   fn uri_parse_queries() {
     let tags = Arc::from("GET /index.html/page?status=ok HTTP/1.1 \r\n".as_bytes());
     let uri = Uri::parse(&tags, 4).unwrap();
+    println!(";; uri {:?}" , uri.query_str().unwrap());
+    let map = uri.5.clone().unwrap();
+
+    for (k,v) in map.iter() {
+      println!(";; k : {} \n;; v : {}" , k , v);
+    };
+
     assert_eq!(uri.get("status").unwrap(), "ok");
   }
 }

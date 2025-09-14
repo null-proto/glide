@@ -1,11 +1,11 @@
 // #![allow(unused)]
 
-use std::{collections::HashMap, hash::Hash, sync::Arc};
+use std::{collections::HashMap, fmt::Display, hash::Hash, sync::Arc};
 
-#[derive(Debug)]
+#[derive(Debug , Clone)]
 pub struct Bytes(Arc<[u8]>, usize, usize);
 
-#[derive(Debug)]
+#[derive(Debug , Clone)]
 pub enum ByteType<'a> {
   Bytes(Bytes),
   Str(&'a str),
@@ -111,6 +111,18 @@ impl Hash for ByteType<'_> {
     } else {
       '\r'.hash(state);
     }
+  }
+}
+
+impl Display for Bytes {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f , "{}" ,self.try_str().unwrap_or("<err>") )
+  }
+}
+
+impl Display for ByteType<'_> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f , "{}" , self.try_str().unwrap_or("<err>"))
   }
 }
 
