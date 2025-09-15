@@ -1,17 +1,15 @@
-// #![allow(unused)]
-
 use std::{collections::HashMap, fmt::Display, hash::Hash, sync::Arc};
 
-#[derive(Debug , Clone)]
+#[derive(Debug, Clone)]
 pub struct Bytes(Arc<[u8]>, usize, usize);
 
-#[derive(Debug , Clone)]
-pub enum ByteType<'a> {
+#[derive(Debug, Clone)]
+pub enum ByteType {
   Bytes(Bytes),
-  Str(&'a str),
+  Str(&'static str),
 }
 
-pub type ByteMap<'a> = HashMap<ByteType<'a>, Bytes>;
+pub type ByteMap = HashMap<ByteType, Bytes>;
 
 pub trait TryStr {
   fn try_str<'a>(&'a self) -> Option<&'a str>;
@@ -42,7 +40,7 @@ impl TryRaw for Bytes {
   }
 }
 
-impl TryStr for ByteType<'_> {
+impl TryStr for ByteType {
   fn try_str<'a>(&'a self) -> Option<&'a str> {
     match self {
       Self::Bytes(a) => a.try_str(),
@@ -51,7 +49,7 @@ impl TryStr for ByteType<'_> {
   }
 }
 
-impl TryRaw for ByteType<'_> {
+impl TryRaw for ByteType {
   fn try_raw<'a>(&'a self) -> Option<&'a [u8]> {
     match self {
       Self::Bytes(a) => a.try_raw(),
@@ -74,7 +72,7 @@ impl PartialEq for Bytes {
   }
 }
 
-impl PartialEq for ByteType<'_> {
+impl PartialEq for ByteType {
   fn eq(&self, other: &Self) -> bool {
     match self {
       Self::Str(a) => match other {
@@ -91,7 +89,7 @@ impl PartialEq for ByteType<'_> {
 }
 
 impl Eq for Bytes {}
-impl Eq for ByteType<'_> {}
+impl Eq for ByteType {}
 
 impl Hash for Bytes {
   fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -103,8 +101,7 @@ impl Hash for Bytes {
   }
 }
 
-
-impl Hash for ByteType<'_> {
+impl Hash for ByteType {
   fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
     if let Some(s) = self.try_str() {
       s.hash(state);
@@ -116,24 +113,24 @@ impl Hash for ByteType<'_> {
 
 impl Display for Bytes {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f , "{}" ,self.try_str().unwrap_or("<err>") )
+    write!(f, "{}", self.try_str().unwrap_or("<err>"))
   }
 }
 
-impl Display for ByteType<'_> {
+impl Display for ByteType {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f , "{}" , self.try_str().unwrap_or("<err>"))
+    write!(f, "{}", self.try_str().unwrap_or("<err>"))
   }
 }
 
-impl<'a> Into<ByteType<'a>> for Bytes {
-  fn into(self) -> ByteType<'a> {
+impl<'a> Into<ByteType> for Bytes {
+  fn into(self) -> ByteType {
     ByteType::Bytes(self)
   }
 }
 
-impl<'a> From<&'a str> for ByteType<'a> {
-  fn from(value: &'a str) -> Self {
+impl From<&'static str> for ByteType {
+  fn from(value: &'static str) -> Self {
     ByteType::Str(value)
   }
 }

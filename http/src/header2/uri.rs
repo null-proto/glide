@@ -1,18 +1,14 @@
 use crate::header2::bytes::{ByteMap, Bytes, TryStr};
 use std::sync::Arc;
 
-///  `Uri( ref , start , end , path , option<query_string> , oprion<query_map> )`
 #[derive(Debug, Clone)]
-pub struct Uri<'a>(
-  Arc<[u8]>,
-  usize,
-  usize,
+pub struct Uri(
   Bytes,
   Option<Bytes>,
-  Option<ByteMap<'a>>,
+  Option<ByteMap>,
 );
 
-impl<'a> Uri<'a> {
+impl Uri {
   pub fn parse(data: &Arc<[u8]>, start: usize) -> Option<Self> {
     let mut t = start - 1;
     let mut s = false;
@@ -32,12 +28,8 @@ impl<'a> Uri<'a> {
 
     let uri = Bytes::new(data, start, t);
 
-    // ?status=ok
-    // 0123456789
-    //
-
     if s {
-      Some(Self(data.clone(), start, t, uri, None, None))
+      Some(Self(uri, None, None))
     } else {
       let mut p1 = t + 1;
       let mut p2 = 0usize;
@@ -71,26 +63,23 @@ impl<'a> Uri<'a> {
       }
       let query = Bytes::new(&data, qstart, t);
 
-      Some(Self(data.clone(), start, t, uri, Some(query), Some(bmap)))
+      Some(Self(uri, Some(query), Some(bmap)))
     }
   }
 }
 
-impl Uri<'_> {
-  pub fn as_str<'a>(&'a self) -> Option<&'a str> {
-    str::from_utf8(self.0.get(self.1..self.2)?).ok()
-  }
+impl Uri {
 
   pub fn path(&self) -> Option<&str> {
-    self.3.try_str()
+    self.0.try_str()
   }
 
   pub fn query_str(&self) -> Option<&str> {
-    self.4.as_ref()?.try_str()
+    self.1.as_ref()?.try_str()
   }
 
-  pub fn get<'a>(&'a self, key: &'a str) -> Option<&'a str> {
-    self.5.as_ref()?.get(&key.into()).unwrap().try_str()
+  pub fn get<'a>(&'a self, key: &'static str) -> Option<&'a str> {
+    self.2.as_ref()?.get(&key.into()).unwrap().try_str()
   }
 }
 
@@ -117,9 +106,9 @@ mod header2_uri_unit_test {
   #[test]
   fn uri_parse_queries() {
     let tags = Arc::from("GET /index.html/page?status=ok HTTP/1.1 \r\n".as_bytes());
-    let uri = Uri::parse(&tags, 4).unwrap();
-    println!(";; uri {}", uri.3);
-    let map = uri.5.clone().unwrap();
+    let uri = Uri::parse(&tags, 1).unwrap();
+    println!(";; uri {}", uri.0);
+    let map = uri.2.clone().unwrap();
 
     for (k, v) in map.iter() {
       println!(";; k : {} \n;; v : {}", k, v);
@@ -131,9 +120,9 @@ mod header2_uri_unit_test {
   #[test]
   fn uri_parse_multiqueries() {
     let tags = Arc::from("GET /index.html/page?status=ok&k1=v1&k2=v2 HTTP/1.1 \r\n".as_bytes());
-    let uri = Uri::parse(&tags, 4).unwrap();
-    println!(";; uri {}", uri.3);
-    let map = uri.5.clone().unwrap();
+    let uri = Uri::parse(&tags, 1).unwrap();
+    println!(";; uri {}", uri.0);
+    let map = uri.2.clone().unwrap();
 
     for (k, v) in map.iter() {
       println!(";; k : {} \n;; v : {}", k, v);
