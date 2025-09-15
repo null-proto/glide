@@ -1,9 +1,16 @@
 use crate::header2::bytes::{ByteMap, Bytes, TryStr};
 use std::sync::Arc;
 
-///  `Uri( start , end , path , option<query_string> , oprion<query_map> )`
-#[derive(Debug , Clone)]
-pub struct Uri<'a>(Arc<[u8]> ,usize, usize, Bytes, Option<Bytes>, Option<ByteMap<'a>>);
+///  `Uri( ref , start , end , path , option<query_string> , oprion<query_map> )`
+#[derive(Debug, Clone)]
+pub struct Uri<'a>(
+  Arc<[u8]>,
+  usize,
+  usize,
+  Bytes,
+  Option<Bytes>,
+  Option<ByteMap<'a>>,
+);
 
 impl<'a> Uri<'a> {
   pub fn parse(data: &Arc<[u8]>, start: usize) -> Option<Self> {
@@ -24,31 +31,35 @@ impl<'a> Uri<'a> {
     }
 
     let uri = Bytes::new(data, start, t);
+
+    // ?status=ok
+    // 0123456789
+    //
+
     if s {
-      Some(Self(data.clone(),start, t, uri, None, None))
+      Some(Self(data.clone(), start, t, uri, None, None))
     } else {
-      t += 1;
-      let mut p1 = t;
+      let mut p1 = t + 1;
       let mut p2 = 0usize;
       let mut bmap = ByteMap::default();
       let qstart = t;
 
-      'query_reader: for i in &data[t..] {
+      'query_reader: for i in &data[t + 1..] {
         t += 1;
         match i {
-          13 => {
+          32 => {
             let k = Bytes::new(&data, p1, p2);
             let v = Bytes::new(&data, p2 + 1, t);
             bmap.insert(k.into(), v);
             break 'query_reader;
           }
 
-          38 => {
+          61 => {
             // =
             p2 = t;
           }
 
-          61 => {
+          38 => {
             // &
             let k = Bytes::new(&data, p1, p2);
             let v = Bytes::new(&data, p2 + 1, t);
@@ -60,7 +71,7 @@ impl<'a> Uri<'a> {
       }
       let query = Bytes::new(&data, qstart, t);
 
-      Some(Self(data.clone() ,start, t, uri, Some(query), Some(bmap)))
+      Some(Self(data.clone(), start, t, uri, Some(query), Some(bmap)))
     }
   }
 }
@@ -107,13 +118,29 @@ mod header2_uri_unit_test {
   fn uri_parse_queries() {
     let tags = Arc::from("GET /index.html/page?status=ok HTTP/1.1 \r\n".as_bytes());
     let uri = Uri::parse(&tags, 4).unwrap();
-    println!(";; uri {:?}" , uri.query_str().unwrap());
+    println!(";; uri {}", uri.3);
     let map = uri.5.clone().unwrap();
 
-    for (k,v) in map.iter() {
-      println!(";; k : {} \n;; v : {}" , k , v);
-    };
+    for (k, v) in map.iter() {
+      println!(";; k : {} \n;; v : {}", k, v);
+    }
 
     assert_eq!(uri.get("status").unwrap(), "ok");
+  }
+
+  #[test]
+  fn uri_parse_multiqueries() {
+    let tags = Arc::from("GET /index.html/page?status=ok&k1=v1&k2=v2 HTTP/1.1 \r\n".as_bytes());
+    let uri = Uri::parse(&tags, 4).unwrap();
+    println!(";; uri {}", uri.3);
+    let map = uri.5.clone().unwrap();
+
+    for (k, v) in map.iter() {
+      println!(";; k : {} \n;; v : {}", k, v);
+    }
+
+    assert_eq!(uri.get("status").unwrap(), "ok");
+    assert_eq!(uri.get("k1").unwrap(), "v1");
+    assert_eq!(uri.get("k2").unwrap(), "v2");
   }
 }
