@@ -12,7 +12,7 @@ pub mod bytes;
 pub mod uri;
 
 #[derive(Debug )]
-struct Header {
+pub struct Header {
   met: Method,
   uri: Uri,
   ver: Version,
@@ -20,7 +20,7 @@ struct Header {
 }
 
 impl Header {
-  fn parse(s: Arc<[u8]>) -> Option<Self> {
+  pub fn parse(s: Arc<[u8]>) -> Option<Self> {
     let mut p1 = 0;
     let mut p2 = 0;
 
@@ -158,10 +158,20 @@ use super::*;
 
   #[test]
   fn test_header3() {
-    let a : &[u8] = "GET /home.html?user=me HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
+    let a : &[u8] = "GET /home.html?user=me&password=nah HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
     println!(";; {}" , header);
-    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "curl/8.15.0");
+    assert!(header.get(USER_AGENT).unwrap().trim().starts_with("curl/"));
+  }
+
+
+  #[test]
+  fn test_header4() {
+    let a : &[u8] = "GET /home.html?user=me&password=nah HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
+    let b = Arc::from(a);
+    let header = Header::parse(b).unwrap();
+    println!(";; {}" , header);
+    assert_eq!(header.uri().get("password").unwrap() , "nah");
   }
 }
