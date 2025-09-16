@@ -131,28 +131,37 @@ use super::*;
 
   #[test]
   fn test_header() {
-    let a : &[u8] = "GET / HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\nUser-Agent : Self\r\n".as_bytes();
+    let a : &[u8] = "GET / HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
     println!(";; {}" , header);
-    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "Self");
+    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "curl/8.15.0");
   }
 
   #[test]
   fn test_header1() {
-    let a : &[u8] = "GET /home.html HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\nUser-Agent : Self\r\n".as_bytes();
+    let a : &[u8] = "GET /home.html HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
     println!(";; {}" , header);
-    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "Self");
+    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "curl/8.15.0");
   }
 
   #[test]
   fn test_header2() {
-    let a : &[u8] = "GET /home.html?user=me HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\nUser-Agent : Self\r\n".as_bytes();
+    let a : &[u8] = "GET /home.html?user=me HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
     println!(";; {}" , header);
-    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "Self");
+    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "curl/8.15.0");
+  }
+
+  #[test]
+  fn test_header3() {
+    let a : &[u8] = "GET /home.html?user=me HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
+    let b = Arc::from(a);
+    let header = Header::parse(b).unwrap();
+    println!(";; {}" , header);
+    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "curl/8.15.0");
   }
 }
