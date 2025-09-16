@@ -1,5 +1,5 @@
 use crate::header2::bytes::{ByteMap, Bytes, TryStr};
-use std::sync::Arc;
+use std::{fmt::Display, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct Uri(
@@ -80,6 +80,12 @@ impl Uri {
 
   pub fn get<'a>(&'a self, key: &'static str) -> Option<&'a str> {
     self.2.as_ref()?.get(&key.into()).unwrap().try_str()
+  }
+}
+
+impl Display for Uri {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f , "Uri : path = {} : queries = {}" , self.0 , match &self.1 { Some(a) => a , None => &self.0 })
   }
 }
 

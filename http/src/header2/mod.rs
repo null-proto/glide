@@ -1,5 +1,7 @@
+use std::fmt::Display;
 use std::{str::FromStr, sync::Arc};
 
+use crate::header2::bytes::TryStr;
 use crate::header2::uri::Uri;
 use crate::{
   header::{Method, Version},
@@ -9,6 +11,7 @@ use crate::{
 pub mod bytes;
 pub mod uri;
 
+#[derive(Debug )]
 struct Header {
   met: Method,
   uri: Uri,
@@ -91,5 +94,65 @@ impl Header {
     }
 
     Some(Self { met, uri, ver, map })
+  }
+}
+
+impl Header {
+  pub fn method(&self) -> &Method {
+    &self.met
+  }
+
+  pub fn version(&self) -> &Version {
+    &self.ver
+  }
+
+  pub fn uri(&self) -> &Uri {
+    &self.uri
+  }
+
+  pub fn get<'a>(&'a self , key : &'static str) -> Option<&'a str> {
+    self.map.get(&bytes::ByteType::Str(key))?.try_str()
+  }
+}
+
+impl Display for Header {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f , "Header : method = {:?} : uri = {} : version : {:?}", self.met , self.uri , self.ver )
+  }
+}
+
+
+
+#[cfg(test)]
+mod header2 {
+  use crate::header::field::USER_AGENT;
+
+use super::*;
+
+  #[test]
+  fn test_header() {
+    let a : &[u8] = "GET / HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\nUser-Agent : Self\r\n".as_bytes();
+    let b = Arc::from(a);
+    let header = Header::parse(b).unwrap();
+    println!(";; {}" , header);
+    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "Self");
+  }
+
+  #[test]
+  fn test_header1() {
+    let a : &[u8] = "GET /home.html HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\nUser-Agent : Self\r\n".as_bytes();
+    let b = Arc::from(a);
+    let header = Header::parse(b).unwrap();
+    println!(";; {}" , header);
+    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "Self");
+  }
+
+  #[test]
+  fn test_header2() {
+    let a : &[u8] = "GET /home.html?user=me HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\nUser-Agent : Self\r\n".as_bytes();
+    let b = Arc::from(a);
+    let header = Header::parse(b).unwrap();
+    println!(";; {}" , header);
+    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "Self");
   }
 }
