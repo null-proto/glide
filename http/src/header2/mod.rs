@@ -127,7 +127,7 @@ impl Display for Header {
 
 #[cfg(test)]
 mod header2 {
-  use crate::header::field::USER_AGENT;
+  use crate::header::field::{HOST, USER_AGENT};
 
 use super::*;
 
@@ -167,7 +167,7 @@ use super::*;
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
     println!(";; {}" , header);
-    assert!(header.get(USER_AGENT).unwrap().starts_with("curl/"));
+    assert!(header.get(HOST).unwrap() == "[::]:8000");
   }
 
 
