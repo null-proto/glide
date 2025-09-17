@@ -85,7 +85,7 @@ impl Uri {
 
 impl Display for Uri {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f , "Uri : path = {} : queries = {}" , self.0 , match &self.1 { Some(a) => a , None => &self.0 })
+    write!(f , "{}{}" , self.0 , match &self.1 { Some(a) => a , None => &self.0 })
   }
 }
 

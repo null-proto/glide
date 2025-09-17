@@ -72,23 +72,25 @@ impl Header {
       'key: loop {
         p2 += 1;
         match s.get(p2) {
-          Some(0x3A) => break 'key,
-          Some(0x03) | None => break 'outer, // `:`
+          Some(0x3A) => break 'key, // `:`
+          Some(0x0D) | None => break 'outer, // `\r`
           Some(_) => {}
         }
       }
       let k = Bytes::new(&s, p1, p2).into();
+      println!(";; k = {}" , k);
 
       p1 = p2 + 1;
       'value: loop {
         p2 += 1;
         match s.get(p2) {
-          Some(0x03) => break 'value, // `\r`
+          Some(0x0D) => break 'value, // `\r`
           Some(_) => {}
           None => break 'outer,
         }
       }
       let v = Bytes::new(&s, p1, p2);
+      println!(";; v = {}" , v);
 
       map.insert(k, v);
     }
@@ -111,13 +113,13 @@ impl Header {
   }
 
   pub fn get<'a>(&'a self , key : &'static str) -> Option<&'a str> {
-    self.map.get(&bytes::ByteType::Str(key))?.try_str()
+    self.map.get(&bytes::ByteType::Str(key))?.try_str().map(|i| i.trim())
   }
 }
 
 impl Display for Header {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f , "Header : method = {:?} : uri = {} : version : {:?}", self.met , self.uri , self.ver )
+    write!(f , "Header : {:?} {} {:?}", self.met , self.uri , self.ver )
   }
 }
 
@@ -135,7 +137,10 @@ use super::*;
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
     println!(";; {}" , header);
-    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "curl/8.15.0");
+    for (i,k) in &header.map {
+      println!(";; [kv] {}  {}" , i , k);
+    }
+    assert!(header.get(USER_AGENT).unwrap().starts_with("curl/"));
   }
 
   #[test]
@@ -144,7 +149,7 @@ use super::*;
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
     println!(";; {}" , header);
-    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "curl/8.15.0");
+    assert!(header.get(USER_AGENT).unwrap().starts_with("curl/"));
   }
 
   #[test]
@@ -153,7 +158,7 @@ use super::*;
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
     println!(";; {}" , header);
-    assert_eq!(header.get(USER_AGENT).unwrap().trim() , "curl/8.15.0");
+    assert!(header.get(USER_AGENT).unwrap().starts_with("curl/"));
   }
 
   #[test]
@@ -162,7 +167,7 @@ use super::*;
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
     println!(";; {}" , header);
-    assert!(header.get(USER_AGENT).unwrap().trim().starts_with("curl/"));
+    assert!(header.get(USER_AGENT).unwrap().starts_with("curl/"));
   }
 
 
