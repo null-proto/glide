@@ -1,91 +1,86 @@
-use std::collections::HashMap;
+use std::sync::Arc;
 
-use crate::header::{self, Version, status::Status};
+use crate::header::field::SERVER;
 
-pub struct Response<'a> {
-  version: Version,
-  status: Status,
-  map: HashMap<&'a str, String>,
-  body: Option<&'a [u8]>,
-}
+pub struct Response(Arc<[u8]>);
 
-impl<'a> Response<'a> {
-  pub fn builder() -> Self {
-    Self {
-      version: Version::default(),
-      status: Status(200),
-      map: Default::default(),
+impl Response {
+  pub fn get(self) -> Arc<[u8]> {
+    self.0
+  }
+
+  pub fn build<'a>() -> ResponseBuilder<'a> {
+    ResponseBuilder {
+      status: 200,
+      status_text: "ok",
+      map: vec![(SERVER, "glide")],
       body: None,
     }
   }
+}
 
+pub struct ResponseBuilder<'a> {
+  status: u16,
+  status_text: &'a str,
+  map: Vec<(&'a str, &'a str)>,
+  body: Option<&'a [u8]>,
+}
+
+impl<'a> ResponseBuilder<'a> {
   pub fn status(mut self, code: u16) -> Self {
-    self.status = Status(code);
+    self.status = code;
     self
   }
 
-  pub fn insert(mut self, key: &'a str, value: String) -> Self {
-    self.map.insert(key, value);
+  pub fn status_text(mut self, msg: &'a str) -> Self {
+    self.status_text = msg;
     self
   }
 
-  pub fn add_body(mut self, c: &'a [u8]) -> Self {
+  pub fn header(mut self, k: &'a str, v: &'a str) -> Self {
+    self.map.push((k, v));
     self
-      .map
-      .insert(header::field::CONTENT_LENGTH, c.len().to_string());
-    self.body = Some(c);
+  }
 
+  pub fn body(mut self, body: &'a [u8]) -> Self {
+    self.body = Some(body);
     self
   }
 }
 
-pub trait Serialize {
-  fn serialize(&self) -> Vec<u8>;
-}
+impl<'a> ResponseBuilder<'a> {
+  pub fn finish(self) -> Response {
+    let mut seri: Vec<u8> = Vec::with_capacity(4096);
 
-impl Serialize for Response<'_> {
-  fn serialize(&self) -> Vec<u8> {
-    let mut ser: Vec<u8> = [&*self.version, &self.status.0.to_string(), &*self.status]
-      .join(" ")
-      .into();
-    ser.extend_from_slice("\r\n".as_bytes());
-    for (k, v) in self.map.iter() {
-      ser.extend_from_slice(
-        &[
-          k.as_bytes(),
-          ": ".as_bytes(),
-          v.as_bytes(),
-          "\r\n".as_bytes(),
-        ]
-        .concat(),
-      );
+    seri.extend_from_slice("HTTP/1.1".as_bytes());
+    seri.push(0x20);
+    seri.extend_from_slice(self.status.to_string().as_bytes());
+    seri.push(0x20);
+    seri.extend_from_slice(self.status_text.as_bytes());
+    seri.push(0x0D);
+    seri.push(0x0A);
+    for (k, v) in self.map {
+      seri.extend_from_slice(k.as_bytes());
+      seri.push(0x3A);
+      seri.push(0x20);
+      seri.extend_from_slice(v.as_bytes());
+      seri.push(0x0D);
+      seri.push(0x0A);
     }
-    ser.extend_from_slice("\r\n".as_bytes());
-    if let Some(body) = &self.body {
-      ser.extend_from_slice(body);
+    seri.push(0x0D);
+    seri.push(0x0A);
+    if let Some(body) = self.body {
+      seri.extend_from_slice(body);
     }
-    ser
+
+    Response(Arc::from(seri))
   }
 }
 
 #[cfg(test)]
-mod unit_test_response {
-  use super::*;
-  use super::Serialize;
-  use crate::header::field;
+mod unittest {
+  use crate::response::ResponseBuilder;
 
   #[test]
-  fn serialize_test() {
-    let res = Response::builder()
-      .status(201)
-      .insert(field::CONNECTION, "Close".to_owned())
-      .add_body("text msg!".as_bytes());
-
-
-    let msg =
-      "HTTP/1.1 201 Ok\r\nConnection: Close\r\nContent-Length: 9\r\n\r\ntext msg!";
-
-    let ser = res.serialize();
-    println!("{:?}", ser);
-  }
+  fn response() {}
 }
