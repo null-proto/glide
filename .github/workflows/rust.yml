@@ -1,9 +1,8 @@
-name: Rust
+name: Runner
 
 on:
   push:
     branches:
-      - master
       - patch-*
       - feature-*
       

@@ -1,0 +1,72 @@
+name: Release
+
+permissions:
+  contents: read
+
+
+on:
+  push:
+    tags:
+      - v*
+      - V*
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses : actions/checkout@v4
+    - name : Run unittest
+      run: cargo test -- --no-capture
+      
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Fetch
+      run: cargo fetch
+
+    - name: Build
+      run: cargo build --verbose --release
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: glide-${{ github.ref_name }}
+        path: |
+          .target/release/glide
+
+  release:
+    permissions:
+      contents: write
+
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+      
+      - run: ls -R ./artifacts
+      
+      - name: Get commit message
+        id: getmsg
+        run: |
+          msg="$(git log -1 --pretty=%B ${{ github.sha }})"
+          echo "msg<<EOF" >> $GITHUB_OUTPUT
+          echo "$msg" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Auto Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body: ${{ steps.getmsg.outputs.msg }}
+          files: ./artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
