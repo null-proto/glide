@@ -113,12 +113,7 @@ mod header2_uri_unit_test {
   fn uri_parse_queries() {
     let tags = Arc::from("GET /index.html/page?status=ok HTTP/1.1 \r\n".as_bytes());
     let uri = Uri::parse(&tags, 4).unwrap();
-    println!(";; uri {}", uri.0);
     let map = uri.2.clone().unwrap();
-
-    for (k, v) in map.iter() {
-      println!(";; k : {}  v : {}", k, v);
-    }
     assert_eq!(uri.get("status").unwrap(), "ok");
   }
 
@@ -126,13 +121,7 @@ mod header2_uri_unit_test {
   fn uri_parse_multiqueries() {
     let tags = Arc::from("GET /index.html/page?status=ok&k1=v1&k2=v2 HTTP/1.1 \r\n".as_bytes());
     let uri = Uri::parse(&tags, 4).unwrap();
-    println!(";; uri {}", uri.0);
     let map = uri.2.clone().unwrap();
-
-    for (k, v) in map.iter() {
-      println!(";; k : {}  v : {}", k, v);
-    }
-
     assert_eq!(uri.get("status").unwrap(), "ok");
     assert_eq!(uri.get("k1").unwrap(), "v1");
     assert_eq!(uri.get("k2").unwrap(), "v2");
