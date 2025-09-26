@@ -26,6 +26,10 @@ impl Bytes {
   pub fn new(arr: &Arc<[u8]>, start: usize, end: usize) -> Self {
     Self(arr.clone(), start, end)
   }
+
+  pub fn from(arr: Arc<[u8]>, start: usize, end: usize) -> Self {
+    Self(arr, start, end)
+  }
 }
 
 impl TryStr for Bytes {
