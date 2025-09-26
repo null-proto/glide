@@ -78,7 +78,6 @@ impl Header {
         }
       }
       let k = Bytes::new(&s, p1, p2).into();
-      println!(";; k = {}" , k);
 
       p1 = p2 + 1;
       'value: loop {
@@ -90,8 +89,6 @@ impl Header {
         }
       }
       let v = Bytes::new(&s, p1, p2);
-      println!(";; v = {}" , v);
-
       map.insert(k, v);
     }
 
@@ -136,10 +133,6 @@ use super::*;
     let a : &[u8] = "GET / HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
-    println!(";; {}" , header);
-    for (i,k) in &header.map {
-      println!(";; [kv] {}  {}" , i , k);
-    }
     assert!(header.get(USER_AGENT).unwrap().starts_with("curl/"));
   }
 
@@ -148,7 +141,6 @@ use super::*;
     let a : &[u8] = "GET /home.html HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
-    println!(";; {}" , header);
     assert!(header.get(USER_AGENT).unwrap().starts_with("curl/"));
   }
 
@@ -157,7 +149,6 @@ use super::*;
     let a : &[u8] = "GET /home.html?user=me HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
-    println!(";; {}" , header);
     assert!(header.get(USER_AGENT).unwrap().starts_with("curl/"));
   }
 
@@ -166,7 +157,6 @@ use super::*;
     let a : &[u8] = "GET /home.html?user=me&password=nah HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
-    println!(";; {}" , header);
     assert!(header.get(HOST).unwrap() == "[::]:8000");
   }
 
@@ -176,7 +166,6 @@ use super::*;
     let a : &[u8] = "GET /home.html?user=me&password=nah HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
-    println!(";; {}" , header);
     assert_eq!(header.uri().get("password").unwrap() , "nah");
   }
 }
