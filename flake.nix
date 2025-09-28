@@ -11,20 +11,7 @@
 	in {
 
 		devShells.${system} = {
-			latest-stable-fish = pkgs.mkShell {
-				buildInputs = with pkgs; [
-					rustup
-				];
-
-				shellHook = ''
-					rustup default stable
-					export SHELL=${builtins.getEnv "SHELL"}
-					export EDITOR=${pkgs.neovim}/bin/nvim
-					exec $SHELL
-				'';
-			};
-
-			rust-lts-fish = pkgs.mkShell {
+			default = pkgs.mkShell {
 				buildInputs = with pkgs; [
 					rustc
 					rustfmt
@@ -32,11 +19,7 @@
 					cargo
 				];
 
-				shellHook = ''
-					export SHELL=${pkgs.fish}/bin/fish
-					export EDITOR=${pkgs.neovim}/bin/nvim
-					exec $SHELL
-				'';
+				shellHook = '' '';
 			};
 		};
   };
