@@ -8,7 +8,16 @@ pub enum Error {
   HeaderParse,
   QueriParse,
   NoQueri,
+
+  Byte2Str,
+  Str2usize,
+  ParseURI,
+  ParseHeader,
+  ParseBody,
+  HttpVersion,
 }
+
+pub type Rp<T> = Result<T,Error>;
 
 // impl StdError for Error {
 // }

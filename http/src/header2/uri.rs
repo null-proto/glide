@@ -1,5 +1,6 @@
 use crate::header2::bytes::{ByteMap, Bytes, TryStr};
 use std::{fmt::Display, sync::Arc};
+use crate::error::Rp;
 
 #[derive(Debug, Clone)]
 pub struct Uri(
@@ -9,9 +10,10 @@ pub struct Uri(
 );
 
 impl Uri {
-  pub fn parse(data: &Arc<[u8]>, start: usize) -> Option<Self> {
+  pub fn parse(data: &Arc<[u8]>, start: usize) -> Rp<Self> {
     let mut t = start - 1;
     let mut s = false;
+
     'uri_reader: for i in &data[start..] {
       t += 1;
       match i {
@@ -29,7 +31,7 @@ impl Uri {
     let uri = Bytes::new(data, start, t);
 
     if s {
-      Some(Self(uri, None, None))
+      Ok(Self(uri, None, None))
     } else {
       let mut p1 = t + 1;
       let mut p2 = 0usize;
@@ -63,7 +65,7 @@ impl Uri {
       }
       let query = Bytes::new(&data, qstart, t);
 
-      Some(Self(uri, Some(query), Some(bmap)))
+      Ok(Self(uri, Some(query), Some(bmap)))
     }
   }
 }

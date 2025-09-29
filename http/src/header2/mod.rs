@@ -1,6 +1,7 @@
 use std::fmt::Display;
 use std::{str::FromStr, sync::Arc};
 
+use crate::error::{Error, Rp};
 use crate::header2::bytes::TryStr;
 use crate::header2::uri::Uri;
 use crate::{
@@ -20,7 +21,7 @@ pub struct Header {
 }
 
 impl Header {
-  pub fn parse(s: Arc<[u8]>) -> Option<Self> {
+  pub fn parse(s: Arc<[u8]>) -> Rp<Self> {
     let mut p1 = 0;
     let mut p2 = 0;
 
@@ -33,8 +34,8 @@ impl Header {
     }
 
     let met: Method = match str::from_utf8(&s[p1..p2]) {
-      Ok(m) => Method::from_str(m).ok(),
-      Err(_) => None,
+      Ok(m) => Method::from_str(m),
+      Err(_) => Err(Error::UnknownMethod),
     }?;
 
     p1 = p2 + 1;
@@ -59,8 +60,8 @@ impl Header {
       }
     }
     let ver: Version = match str::from_utf8(&s[p1..p2]) {
-      Ok(v) => Version::from_str(v).ok(),
-      Err(_) => None,
+      Ok(v) => Version::from_str(v),
+      Err(_) => Err(Error::UnknownVersion),
     }?;
 
     let mut map = ByteMap::default();
@@ -92,7 +93,7 @@ impl Header {
       map.insert(k, v);
     }
 
-    Some(Self { met, uri, ver, map })
+    Ok(Self { met, uri, ver, map })
   }
 }
 

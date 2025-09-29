@@ -1,13 +1,15 @@
 use std::{fmt::Display, io::Read, sync::Arc};
 
 use crate::{
+  error::Error,
+  error::Rp,
   header::field,
   header2::{self, bytes::Bytes},
 };
 
 pub struct Request {
   pub header: header2::Header,
-  pub body: Bytes,
+  pub body: Option<Bytes>,
 }
 
 impl Request {
@@ -22,7 +24,7 @@ impl Request {
     None
   }
 
-  pub fn new<'a, T>(io: &'a mut T) -> Option<Self>
+  pub fn new<'a, T>(io: &'a mut T) -> Rp<Self>
   where
     T: Read,
   {
@@ -52,42 +54,52 @@ impl Request {
 
     let arc_data = Arc::from(data);
     let header = header2::Header::parse(arc_data)?;
-    let mut body_length = header.get(field::CONTENT_LENGTH)?.parse::<usize>().ok()?;
+    if let Some(mut body_length) = header
+      .get(field::CONTENT_LENGTH)
+      .map(|i| i.parse::<usize>().unwrap())
+    {
+      loop {
+        if body_length > body.len() {
+          match io.read(&mut buf) {
+            Ok(0) => {
+              break;
+            }
 
-    loop {
-      if body_length > body.len() {
-        match io.read(&mut buf) {
-          Ok(0) => {
-            break;
+            Ok(i) => {
+              body_length -= i;
+              body.extend_from_slice(&buf[..i]);
+            }
+            Err(_e) => {
+              break;
+            }
           }
-
-          Ok(i) => {
-            body_length -= i;
-            body.extend_from_slice(&buf[..i]);
-          }
-          Err(_e) => {
-            break;
-          }
+        } else {
+          break;
         }
       }
-      else {
-        break;
-      }
+
+      let f_body = Bytes::from(Arc::from(body), 0, body_length);
+      println!("body {:?} ", f_body);
+
+      Ok(Self {
+        header: header,
+        body: Some(f_body),
+      })
+    } else {
+      Ok(Self { header: header, body: None })
     }
-
-    let f_body = Bytes::from(Arc::from(body) , 0 , body_length);
-    println!("body {:?} ", f_body);
-
-    Some(Self {
-      header: header,
-      body: f_body
-    })
   }
 }
 
 impl Display for Request {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f , "{}\nbody_size: {}\nbosy: {}" , self.header , self.body.len() , self.body)
+    write!(
+      f,
+      "{}\nbody_size: {}\nbosy: {:?}",
+      self.header,
+      self.body.as_ref().map(|i| i.len() ).unwrap_or(0),
+      self.body
+    )
   }
 }
 
@@ -110,6 +122,6 @@ w
 ";
     let mut sample = Cursor::new(sample.as_bytes());
     let res = Request::new(&mut sample);
-    assert!(res.is_some());
+    assert!(res.is_ok());
   }
 }
