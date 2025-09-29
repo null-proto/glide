@@ -11,7 +11,7 @@ use crate::{
 pub mod bytes;
 pub mod uri;
 
-#[derive(Debug )]
+#[derive(Debug)]
 pub struct Header {
   met: Method,
   uri: Uri,
@@ -72,7 +72,7 @@ impl Header {
       'key: loop {
         p2 += 1;
         match s.get(p2) {
-          Some(0x3A) => break 'key, // `:`
+          Some(0x3A) => break 'key,          // `:`
           Some(0x0D) | None => break 'outer, // `\r`
           Some(_) => {}
         }
@@ -109,28 +109,36 @@ impl Header {
     &self.uri
   }
 
-  pub fn get<'a>(&'a self , key : &'static str) -> Option<&'a str> {
-    self.map.get(&bytes::ByteType::Str(key))?.try_str().map(|i| i.trim())
+  pub fn get<'a>(&'a self, key: &'static str) -> Option<&'a str> {
+    self
+      .map
+      .get(&bytes::ByteType::Str(key))?
+      .try_str()
+      .map(|i| i.trim())
   }
 }
 
 impl Display for Header {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f , "Header : {:?} {} {:?}", self.met , self.uri , self.ver )
+    write!(f, "{:?} {} {:?}", self.met, self.uri, self.ver)?;
+    for (i, j) in &self.map {
+      write!(f, "> {} : {}", i, j)?;
+    }
+    Ok(())
   }
 }
-
-
 
 #[cfg(test)]
 mod header2 {
   use crate::header::field::{HOST, USER_AGENT};
 
-use super::*;
+  use super::*;
 
   #[test]
   fn test_header() {
-    let a : &[u8] = "GET / HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
+    let a: &[u8] =
+      "GET / HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n"
+        .as_bytes();
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
     assert!(header.get(USER_AGENT).unwrap().starts_with("curl/"));
@@ -160,12 +168,11 @@ use super::*;
     assert!(header.get(HOST).unwrap() == "[::]:8000");
   }
 
-
   #[test]
   fn test_header4() {
     let a : &[u8] = "GET /home.html?user=me&password=nah HTTP/1.1\r\nHost: [::]:8000\r\nUser-Agent: curl/8.15.0\r\nAccept: */*\r\n\r\n".as_bytes();
     let b = Arc::from(a);
     let header = Header::parse(b).unwrap();
-    assert_eq!(header.uri().get("password").unwrap() , "nah");
+    assert_eq!(header.uri().get("password").unwrap(), "nah");
   }
 }
