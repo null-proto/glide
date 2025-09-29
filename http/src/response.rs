@@ -75,6 +75,27 @@ impl<'a> ResponseBuilder<'a> {
 
     Response(Arc::from(seri))
   }
+
+  pub fn attach_raw<T>(self,bytes : T) -> Response where T: Into<&'a [u8]> {
+    let mut seri: Vec<u8> = Vec::with_capacity(4096);
+    seri.extend_from_slice("HTTP/1.1".as_bytes());
+    seri.push(0x20);
+    seri.extend_from_slice(self.status.to_string().as_bytes());
+    seri.push(0x20);
+    seri.extend_from_slice(self.status_text.as_bytes());
+    seri.push(0x0D);
+    seri.push(0x0A);
+    for (k, v) in self.map {
+      seri.extend_from_slice(k.as_bytes());
+      seri.push(0x3A);
+      seri.push(0x20);
+      seri.extend_from_slice(v.as_bytes());
+      seri.push(0x0D);
+      seri.push(0x0A);
+    }
+    seri.extend_from_slice(bytes.into());
+    Response(Arc::from(seri))
+  }
 }
 
 #[cfg(test)]
