@@ -1,4 +1,4 @@
-use std::{io::Read, sync::Arc};
+use std::{fmt::Display, io::Read, sync::Arc};
 
 use crate::{
   header::field,
@@ -82,6 +82,12 @@ impl Request {
       header: header,
       body: f_body
     })
+  }
+}
+
+impl Display for Request {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f , "{}\nbody_size: {}\nbosy: {}" , self.header , self.body.len() , self.body)
   }
 }
 

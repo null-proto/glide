@@ -32,6 +32,16 @@ impl Bytes {
   }
 }
 
+impl Bytes {
+  pub fn size(&self) -> usize {
+    self.0.len()
+  }
+
+  pub fn len(&self) -> usize {
+    self.2 - self.1
+  }
+}
+
 impl TryStr for Bytes {
   fn try_str<'a>(&'a self) -> Option<&'a str> {
     str::from_utf8(self.0.get(self.1..self.2)?).ok()
