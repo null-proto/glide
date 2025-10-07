@@ -1,6 +1,6 @@
-use std::net::TcpListener;
+use std::{io::Write, net::TcpListener};
 
-use http::request::{self, Request};
+use http::{request::{self, Request}, response::{Response, ResponseBuilder}};
 use tracing::{debug, info, trace, warn};
 
 
@@ -18,6 +18,16 @@ pub fn serve(listener: TcpListener) {
 
         let uri = req.header.uri();
         debug!("{}" , uri.path().unwrap());
+
+        match uri {
+          _ => {
+            let res = Response::build()
+              .status(404)
+              .status_text("Not Found")
+              .finish();
+            _ = stream.write_all(&res.get());
+          }
+        }
       }
 
       Err(e) => {
