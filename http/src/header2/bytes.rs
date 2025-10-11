@@ -40,6 +40,10 @@ impl Bytes {
   pub fn len(&self) -> usize {
     self.2 - self.1
   }
+
+  pub fn slice<'a>(&self) -> &[u8] {
+    &self.0[self.1..self.2]
+  }
 }
 
 impl TryStr for Bytes {

@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::vec::IntoIter;
 use std::{str::FromStr, sync::Arc};
 
 use crate::error::{Error, Rp};
@@ -117,13 +118,17 @@ impl Header {
       .try_str()
       .map(|i| i.trim())
   }
+
+  pub fn gather<'a>(&'a self) -> Vec<(&'a str , &'a str)> {
+    self.map.iter().filter_map(|(k,v)| { Some((k.try_str()? ,v.try_str()?)) }).collect()
+  }
 }
 
 impl Display for Header {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "{:?} {} {:?}", self.met, self.uri, self.ver)?;
     for (i, j) in &self.map {
-      write!(f, "\n> {} : {}", i, j)?;
+      write!(f, "\n> {}:{}", i, j)?;
     }
     Ok(())
   }

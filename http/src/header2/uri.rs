@@ -87,7 +87,7 @@ impl Uri {
 
 impl Display for Uri {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f , "{}{}" , self.0 , match &self.1 { Some(a) => a , None => &self.0 })
+    write!(f , "{}" , match &self.1 { Some(i) => format!("{}?{}",self.0,i) ,None=> self.0.to_string() })
   }
 }
 

@@ -1,29 +1,25 @@
-use std::{
-  io,
-  net::TcpStream,
-  os::fd::AsFd,
-  process::{Command, Stdio},
-};
+use std::io::Stdout;
+use std::io::Read;
+use std::process::Command;
+use std::process::Stdio;
 
 use tracing::{info, trace};
 
 #[allow(unused_mut)]
 pub fn http_backend<'a>(
+  env : Vec<(&str,&str)>,
   method: &'a str,
   path_info: &'a str,
   query: &'a str,
   project_dir: &'static str,
-  mut stream: TcpStream,
-) -> Result<(), io::Error> {
+) -> Option<String> {
   trace!(
     "REQUEST_METHOD: {} GIT_PROJECT_ROOT: {} PATH_INFO: {} QUERY_STRING: {}",
     method, project_dir, path_info, query
   );
+  let mut buf = String::new();
 
-  let stdin = Stdio::from(stream.as_fd().try_clone_to_owned()?);
-  let stdout = Stdio::from(stream.as_fd().try_clone_to_owned()?);
-
-  let _git = Command::new("git")
+  let mut _git = Command::new("git")
     .current_dir(project_dir)
     .arg("http-backend")
     .env("REQUEST_METHOD", method)
@@ -31,13 +27,17 @@ pub fn http_backend<'a>(
     .env("PATH_INFO", path_info)
     .env("GIT_HTTP_EXPORT_ALL", "1")
     .env("QUERY_STRING", query)
-    .stdout(stdout)
-    .stdin(stdin)
-    .spawn()?;
+    .envs(env)
+    .stdout(Stdio::piped())
+    .spawn()
+    .ok()?;
 
-  info!("sock :{:?}", stream.as_fd());
+  let mut stdout = _git.stdout.take().unwrap();
+  _ = stdout.read_to_string(&mut buf);
+  trace!("git http-backend [{}]" , _git.wait().unwrap());
+  trace!("read : {}" ,buf);
 
-  Ok(())
+  Some(buf)
 }
 
 pub fn create_bare<'a>(
