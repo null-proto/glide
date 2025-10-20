@@ -1,4 +1,5 @@
 # Glide
+[![Build](https://github.com/null-proto/glide/actions/workflows/rust.yml/badge.svg)](https://github.com/null-proto/glide/actions/workflows/rust.yml)
   Glide is a minimal tool for hosting bare Git repositories over HTTP. It’s intended for personal or embedded use cases where a full Git platform is unnecessary.
 
 The implementation uses own HTTP/1.1 server, written from scratch and performance-tuned. It uses `git http-backend` for clone/sync git repo.
