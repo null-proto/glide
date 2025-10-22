@@ -1,4 +1,4 @@
-name: Release
+name: release
 
 permissions:
   contents: read
@@ -8,7 +8,6 @@ on:
   push:
     tags:
       - v*
-      - V*
 
 env:
   CARGO_TERM_COLOR: always
