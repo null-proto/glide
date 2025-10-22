@@ -1,9 +1,11 @@
 [package]
 name = "glide"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2024"
 
 [dependencies]
+clap = { version = "4.5.50", features = ["derive"] }
 server = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+tokio = { workspace=true }

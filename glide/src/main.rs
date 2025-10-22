@@ -1,7 +1,10 @@
-use std::net::TcpListener;
-use server::serve;
-use tracing::{level_filters::LevelFilter, trace};
+use clap::Parser;
+use tracing::level_filters::LevelFilter;
 
+use crate::cli::Cli;
+
+mod cli;
+mod init;
 
 fn main() {
   let tracer = tracing_subscriber::FmtSubscriber::builder()
@@ -10,7 +13,6 @@ fn main() {
 
   let _ = tracing::subscriber::set_global_default(tracer);
 
-  trace!("listening on [::]:8000");
-  let lisner = TcpListener::bind("[::]:8000").unwrap();
-  serve(lisner);
+  let cli = Cli::parse();
+  init::init(cli);
 }

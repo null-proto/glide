@@ -1,15 +1,22 @@
-use std::{io::Write, net::TcpListener};
+use std::net::TcpListener;
+use std::io::Write;
 
-use http::{
-  header::field,
-  request::{self, Request},
-  response::{Response, ResponseBuilder},
-};
-use tracing::{debug, info, trace, warn};
+use http::response::Response;
+use http::request::Request;
+use http::header::field;
+use tracing::warn;
+use tracing::trace;
+use tracing::info;
+use tracing::debug;
+
+use crate::config::ServerConfig;
 
 pub mod git;
+pub mod config;
+pub mod err;
 
-pub fn serve(listener: TcpListener) {
+pub fn serve(listener: TcpListener , config : ServerConfig) {
+
   while let Ok((mut stream, peer)) = listener.accept() {
     info!("connection form : {}", peer);
 
@@ -27,7 +34,7 @@ pub fn serve(listener: TcpListener) {
               // here is the git client
               let env = req.header.gather();
               let res = if let Some(git_res) =
-                git::http_backend(env, req.header.method(), i, uri.query_str().unwrap(), ".")
+                git::http_backend(env, req.header.method(), i, uri.query_str().unwrap(), &config.root_dir)
               {
                 trace!("git_res : {}",git_res);
                 Response::build()

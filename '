@@ -1,0 +1,17 @@
+use std::fmt::Display;
+
+#[derive(Debug)]
+pub enum ServerError {
+  ProjectRootNotFound(String)
+}
+
+impl Display for ServerError {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Self::ProjectRootNotFound(f) => {
+        // write!(f ,  format!("ProjectRootNotFound: {}" ,f) )
+        write!(&mut f , "")
+      }
+    }
+  }
+}

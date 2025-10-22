@@ -1,9 +1,8 @@
-use std::io::Stdout;
 use std::io::Read;
 use std::process::Command;
 use std::process::Stdio;
 
-use tracing::{info, trace};
+use tracing::trace;
 
 #[allow(unused_mut)]
 pub fn http_backend<'a>(
@@ -11,7 +10,7 @@ pub fn http_backend<'a>(
   method: &'a str,
   path_info: &'a str,
   query: &'a str,
-  project_dir: &'static str,
+  project_dir: &'a str,
 ) -> Option<String> {
   trace!(
     "REQUEST_METHOD: {} GIT_PROJECT_ROOT: {} PATH_INFO: {} QUERY_STRING: {}",
@@ -42,7 +41,7 @@ pub fn http_backend<'a>(
 
 pub fn create_bare<'a>(
   path_info: &'a str,
-  project_dir: &'static str,
+  project_dir: &'a str,
 ) -> Result<(), std::io::Error> {
   let path = format!("mkdir -p {}/{}", project_dir, path_info);
 
