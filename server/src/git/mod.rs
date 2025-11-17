@@ -1,11 +1,12 @@
-use std::io::Read;
-use std::process::Command;
+use tokio::process::Command;
 use std::process::Stdio;
+// use std::io::Read;
+use tokio::io::AsyncReadExt;
 
 use tracing::trace;
 
 #[allow(unused_mut)]
-pub fn http_backend<'a>(
+pub async fn http_backend<'a>(
   env : Vec<(&str,&str)>,
   method: &'a str,
   path_info: &'a str,
@@ -18,7 +19,7 @@ pub fn http_backend<'a>(
   );
   let mut buf = String::new();
 
-  let mut _git = Command::new("git")
+  let mut git = Command::new("git")
     .current_dir(project_dir)
     .arg("http-backend")
     .env("REQUEST_METHOD", method)
@@ -31,9 +32,11 @@ pub fn http_backend<'a>(
     .spawn()
     .ok()?;
 
-  let mut stdout = _git.stdout.take().unwrap();
-  _ = stdout.read_to_string(&mut buf);
-  trace!("git http-backend [{}]" , _git.wait().unwrap());
+  if let Some(mut io) = git.stdout.take() {
+    _ = io.read_to_string(&mut buf);
+  };
+
+  trace!("git http-backend [{}]" , git.wait().await.ok()?);
   trace!("read : {}" ,buf);
 
   Some(buf)

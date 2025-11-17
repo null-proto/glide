@@ -100,8 +100,6 @@ impl<'a> ResponseBuilder<'a> {
 
 #[cfg(test)]
 mod unittest {
-  use crate::response::ResponseBuilder;
-
   #[test]
   fn response() {}
 }

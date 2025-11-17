@@ -1,8 +1,9 @@
-use std::{fmt::Display, io::Read, sync::Arc};
+use std::{fmt::Display, sync::Arc};
 
 use crate::header2::{self, bytes::Bytes};
 use crate::header::field;
 use crate::error::Rp;
+use tokio::io::{ AsyncRead , AsyncReadExt};
 
 pub struct Request {
   pub header: header2::Header,
@@ -21,9 +22,9 @@ impl Request {
     None
   }
 
-  pub fn new<'a, T>(io: &'a mut T) -> Rp<Self>
+  pub async fn new<'a, T>(io: &'a mut T) -> Rp<Self>
   where
-    T: Read,
+    T: AsyncRead + Unpin,
   {
     let mut data: Vec<u8> = Vec::new();
     let mut body: Vec<u8> = Vec::new();
@@ -31,7 +32,7 @@ impl Request {
     let mut buf = [0u8; 4096];
 
     'reader: loop {
-      match io.read(&mut buf) {
+      match io.read(&mut buf).await {
         Ok(0) => {
           break 'reader;
         }
@@ -57,7 +58,7 @@ impl Request {
     {
       loop {
         if body_length > body.len() {
-          match io.read(&mut buf) {
+          match io.read(&mut buf).await {
             Ok(0) => {
               break;
             }
@@ -106,8 +107,8 @@ mod unittest {
 
   use crate::request::Request;
 
-  #[test]
-  fn request() {
+  #[tokio::test]
+  async fn request() {
     let sample = "POST /index.html/e?y=6&x=0 HTTP/1.1\r
 Host: [::]:8000\r
 User-Agent: curl/8.x.x\r
@@ -118,7 +119,7 @@ Content-Type: application/x-www-form-urlencoded\r
 w
 ";
     let mut sample = Cursor::new(sample.as_bytes());
-    let res = Request::new(&mut sample);
+    let res = Request::new(&mut sample).await;
     assert!(res.is_ok());
   }
 }

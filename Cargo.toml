@@ -14,6 +14,6 @@ default-member = "glide"
 [workspace.dependencies]
 server = { path = "./server/"}
 http = { path = "./http/"}
-tokio = { version = "1.48.0", features = ["net", "fs"] }
+tokio = { version = "1.48.0", features = ["net", "fs" , "io-util" , "rt" , "macros" , "process" ] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["tracing"] }

@@ -1,6 +1,5 @@
-use std::net::TcpListener;
-use std::io::Write;
-
+use tokio::net::TcpListener;
+use tokio::io::{AsyncWrite , AsyncWriteExt};
 use http::response::Response;
 use http::request::Request;
 use http::header::field;
@@ -15,12 +14,12 @@ pub mod git;
 pub mod config;
 pub mod err;
 
-pub fn serve(listener: TcpListener , config : ServerConfig) {
+pub async fn serve(listener: TcpListener , config : ServerConfig) {
 
-  while let Ok((mut stream, peer)) = listener.accept() {
+  while let Ok((mut stream, peer)) = listener.accept().await {
     info!("connection form : {}", peer);
 
-    match Request::new(&mut stream) {
+    match Request::new(&mut stream).await {
       Ok(req) => {
         trace!("{}", req);
 
@@ -34,7 +33,7 @@ pub fn serve(listener: TcpListener , config : ServerConfig) {
               // here is the git client
               let env = req.header.gather();
               let res = if let Some(git_res) =
-                git::http_backend(env, req.header.method(), i, uri.query_str().unwrap(), &config.root_dir)
+                git::http_backend(env, req.header.method(), i, uri.query_str().unwrap(), &config.root_dir).await
               {
                 trace!("git_res : {}",git_res);
                 Response::build()
@@ -50,7 +49,7 @@ pub fn serve(listener: TcpListener , config : ServerConfig) {
                   .finish()
               };
 
-              _ = stream.write_all(&res.get());
+              stream.write_all(&res.get()).await;
             } else {
               let res = Response::build()
                 .status(308)
@@ -58,7 +57,7 @@ pub fn serve(listener: TcpListener , config : ServerConfig) {
                 .header(field::LOCATION, i.trim_end_matches("/info/refs"))
                 .body(b"Only allowed git > 2.x")
                 .finish();
-              _ = stream.write_all(&res.get());
+              stream.write_all(&res.get()).await;
             }
           }
 
@@ -67,7 +66,7 @@ pub fn serve(listener: TcpListener , config : ServerConfig) {
               .status(404)
               .status_text("Not Found")
               .finish();
-            _ = stream.write_all(&res.get());
+            stream.write_all(&res.get()).await;
           }
         }
       }
