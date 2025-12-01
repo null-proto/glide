@@ -48,7 +48,7 @@ impl Bytes {
 
 impl TryStr for Bytes {
   fn try_str<'a>(&'a self) -> Option<&'a str> {
-    str::from_utf8(self.0.get(self.1..self.2)?).ok()
+    core::str::from_utf8(self.0.get(self.1..self.2)?).ok()
   }
 }
 

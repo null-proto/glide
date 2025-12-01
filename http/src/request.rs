@@ -1,12 +1,12 @@
 use std::{fmt::Display, sync::Arc};
 
-use crate::header2::{self, bytes::Bytes};
+use crate::header::{self, bytes::Bytes};
 use crate::header::field;
 use crate::error::Rp;
 use tokio::io::{ AsyncRead , AsyncReadExt};
 
 pub struct Request {
-  pub header: header2::Header,
+  pub header: header::Header,
   pub body: Option<Bytes>,
 }
 

@@ -1,78 +1,131 @@
-use std::{collections::HashMap, path, str::FromStr};
+use crate::header2::bytes::{ByteMap, Bytes, TryStr};
+use std::{fmt::Display, sync::Arc};
+use crate::error::Rp;
 
-use crate::{error::Error, header::Parse};
+#[derive(Debug, Clone)]
+pub struct Uri(
+  Bytes,
+  Option<Bytes>,
+  Option<ByteMap>,
+);
 
-#[derive(Default, Debug, Clone)]
-pub struct Uri<'a> {
-  pub(crate) path: &'a str,
-  pub raw: Option<&'a str>,
-  pub query: Option<HashMap<&'a str, &'a str>>,
-}
+impl Uri {
+  pub fn parse(data: &Arc<[u8]>, start: usize) -> Rp<Self> {
+    let mut t = start - 1;
+    let mut s = false;
 
-impl<'a> Parse<'a> for Uri<'a> {
-  fn parse(s: &'a [u8]) -> Result<Self, crate::error::Error>
-  where
-    Self: Sized,
-  {
-    let s = str::from_utf8(s).map_err(|_| Error::UriParse)?.trim();
-    match s.split_once('?') {
-      Some((path, query_str)) => {
-        let a: Option<HashMap<&'a str, &'a str>> = if !query_str.is_empty() {
-          Some(
-            query_str
-              .split('&')
-              .filter_map(|i| {
-                if !i.is_empty() {
-                  Some(i.split_once('=').unwrap_or((i, "")))
-                } else {
-                  None
-                }
-              })
-              .collect(),
-          )
-        } else {
-          None
-        };
-
-        Ok(Self {
-          path: path,
-          raw: Some(query_str),
-          query: a,
-        })
+    'uri_reader: for i in &data[start..] {
+      t += 1;
+      match i {
+        63 => {
+          break 'uri_reader;
+        }
+        32 => {
+          s = true;
+          break 'uri_reader;
+        }
+        _ => {}
       }
-      None => Ok(Self {
-        path: s,
-        raw: None,
-        query: None,
-      }),
+    }
+
+    let uri = Bytes::new(data, start, t);
+
+    if s {
+      Ok(Self(uri, None, None))
+    } else {
+      let mut p1 = t + 1;
+      let mut p2 = 0usize;
+      let mut bmap = ByteMap::default();
+      let qstart = t;
+
+      'query_reader: for i in &data[t + 1..] {
+        t += 1;
+        match i {
+          32 => {
+            let k = Bytes::new(&data, p1, p2);
+            let v = Bytes::new(&data, p2 + 1, t);
+            bmap.insert(k.into(), v);
+            break 'query_reader;
+          }
+
+          61 => {
+            // =
+            p2 = t;
+          }
+
+          38 => {
+            // &
+            let k = Bytes::new(&data, p1, p2);
+            let v = Bytes::new(&data, p2 + 1, t);
+            bmap.insert(k.into(), v);
+            p1 = t + 1;
+          }
+          _ => {}
+        }
+      }
+      let query = Bytes::new(&data, qstart, t);
+
+      Ok(Self(uri, Some(query), Some(bmap)))
     }
   }
 }
 
-#[cfg(test)]
-mod unit_test {
-  use std::{io::Bytes, sync::Arc};
+impl Uri {
 
-  use super::Uri;
-  use crate::error;
-  use crate::header::Parse;
+  pub fn path(&self) -> Option<&str> {
+    self.0.try_str()
+  }
+
+  pub fn query_str(&self) -> Option<&str> {
+    self.1.as_ref()?.try_str()
+  }
+
+  pub fn get<'a>(&'a self, key: &'static str) -> Option<&'a str> {
+    self.2.as_ref()?.get(&key.into()).unwrap().try_str()
+  }
+}
+
+impl Display for Uri {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f , "{}" , match &self.1 { Some(i) => format!("{}?{}",self.0,i) ,None=> self.0.to_string() })
+  }
+}
+
+#[cfg(test)]
+mod header2_uri_unit_test {
+  use std::sync::Arc;
+
+  use crate::header2::uri::Uri;
 
   #[test]
-  fn test_uri() {
-    let uri: Arc<[u8]> = Arc::from("/home/user/resource.html?k1=v1&k2=v2".as_bytes());
-    let uri = Uri::parse(&uri);
-    println!("URI: {:?}", uri.unwrap());
+  fn uri_parse_simple() {
+    let tags = Arc::from("GET / HTTP/1.1 \r\n".as_bytes());
+    let uri = Uri::parse(&tags, 4).unwrap();
+    assert_eq!(uri.path().unwrap(), "/");
+  }
 
-    let uri: Arc<[u8]> = Arc::from("/home/user/resource.html?k1=v1&k2".as_bytes());
-    let uri = Uri::parse(&uri);
-    println!("URI: {:?}", uri.unwrap());
+  #[test]
+  fn uri_parse_normal() {
+    let tags = Arc::from("GET /index.html/page?status=ok HTTP/1.1 \r\n".as_bytes());
+    let uri = Uri::parse(&tags, 4).unwrap();
+    assert_eq!(uri.path().unwrap(), "/index.html/page");
+  }
 
-    let uri: Arc<[u8]> = Arc::from("/home/user/resource.html?".as_bytes());
-    let uri = Uri::parse(&uri);
-    println!("URI: {:?}", uri.unwrap());
+  #[test]
+  fn uri_parse_queries() {
+    let tags = Arc::from("GET /index.html/page?status=ok HTTP/1.1 \r\n".as_bytes());
+    let uri = Uri::parse(&tags, 4).unwrap();
+    let map = uri.2.clone().unwrap();
+    assert_eq!(uri.get("status").unwrap(), "ok");
+  }
 
-    let uri: Arc<[u8]> = Arc::from("/home/user/resource.html".as_bytes());
-    let uri = Uri::parse(&uri);
-    println!("URI: {:?}", uri.unwrap());
+  #[test]
+  fn uri_parse_multiqueries() {
+    let tags = Arc::from("GET /index.html/page?status=ok&k1=v1&k2=v2 HTTP/1.1 \r\n".as_bytes());
+    let uri = Uri::parse(&tags, 4).unwrap();
+    let map = uri.2.clone().unwrap();
+    assert_eq!(uri.get("status").unwrap(), "ok");
+    assert_eq!(uri.get("k1").unwrap(), "v1");
+    assert_eq!(uri.get("k2").unwrap(), "v2");
   }
 }
