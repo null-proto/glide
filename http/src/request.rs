@@ -51,7 +51,7 @@ impl Request {
     }
 
     let arc_data = Arc::from(data);
-    let header = header2::Header::parse(arc_data)?;
+    let header = header::Header::parse(arc_data)?;
     if let Some(mut body_length) = header
       .get(field::CONTENT_LENGTH)
       .map(|i| i.parse::<usize>().unwrap())

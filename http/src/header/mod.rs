@@ -3,12 +3,9 @@ use std::ops::Deref;
 use std::{str::FromStr, sync::Arc};
 
 use crate::error::{self, Error, Rp};
-use crate::header2::bytes::TryStr;
-use crate::header2::uri::Uri;
-use crate::{
-  header::{Method, Version},
-  header2::bytes::{ByteMap, Bytes},
-};
+use crate::header::bytes::TryStr;
+use crate::header::uri::Uri;
+use crate::header::bytes::{ByteMap, Bytes};
 
 pub mod bytes;
 pub mod uri;
@@ -120,7 +117,7 @@ impl Header {
       }
     }
 
-    let met: Method = match str::from_utf8(&s[p1..p2]) {
+    let met: Method = match core::str::from_utf8(&s[p1..p2]) {
       Ok(m) => Method::from_str(m),
       Err(_) => Err(Error::UnknownMethod),
     }?;
@@ -146,7 +143,7 @@ impl Header {
         Some(_) => {}
       }
     }
-    let ver: Version = match str::from_utf8(&s[p1..p2]) {
+    let ver: Version = match core::str::from_utf8(&s[p1..p2]) {
       Ok(v) => Version::from_str(v),
       Err(_) => Err(Error::UnknownVersion),
     }?;
