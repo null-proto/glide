@@ -7,3 +7,7 @@ edition = "2024"
 http = { workspace = true }
 tracing = {workspace = true}
 tokio = { workspace=true }
+
+[build-dependencies]
+curl = "0.4.49"
+tokio = { workspace=true }

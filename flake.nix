@@ -13,6 +13,8 @@
 		devShells.${system} = {
 			default = pkgs.mkShell {
 				buildInputs = with pkgs; [
+				  pkg-config
+					openssl
 					rustc
 					rustfmt
 					rust-analyzer
