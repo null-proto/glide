@@ -9,7 +9,7 @@ fn main() {
 
   curl.url("https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js").unwrap();
 
-  println!("OUTDIR: {}" , target);
+  eprintln!("OUTDIR: {}" , target);
 
   curl.write_function(move |htmx| {
     let file_ = Path::new(&target).join("tmp_htmx.js");

@@ -95,7 +95,7 @@ impl Display for Uri {
 mod header2_uri_unit_test {
   use std::sync::Arc;
 
-  use crate::header2::uri::Uri;
+  use crate::header::uri::Uri;
 
   #[test]
   fn uri_parse_simple() {
