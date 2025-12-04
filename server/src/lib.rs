@@ -1,5 +1,7 @@
+use std::path::PathBuf;
+
 use tokio::net::TcpListener;
-use tokio::io::{AsyncWrite , AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 use http::response::Response;
 use http::request::Request;
 use http::header::field;
@@ -8,13 +10,11 @@ use tracing::trace;
 use tracing::info;
 use tracing::debug;
 
-use crate::config::ServerConfig;
 
 pub mod git;
-pub mod config;
 pub mod err;
 
-pub async fn serve(listener: TcpListener , config : ServerConfig) {
+pub async fn serve(listener: TcpListener , root_dir : PathBuf) {
 
   while let Ok((mut stream, peer)) = listener.accept().await {
     info!("connection form : {}", peer);
@@ -33,7 +33,7 @@ pub async fn serve(listener: TcpListener , config : ServerConfig) {
               // here is the git client
               let env = req.header.gather();
               let res = if let Some(git_res) =
-                git::http_backend(env, req.header.method(), i, uri.query_str().unwrap(), &config.root_dir).await
+                git::http_backend(env, req.header.method(), i, uri.query_str().unwrap(),root_dir.to_str().unwrap()).await
               {
                 trace!("git_res : {}",git_res);
                 Response::build()
@@ -49,7 +49,7 @@ pub async fn serve(listener: TcpListener , config : ServerConfig) {
                   .finish()
               };
 
-              stream.write_all(&res.get()).await;
+              _ = stream.write_all(&res.get()).await;
             } else {
               let res = Response::build()
                 .status(308)
@@ -57,7 +57,7 @@ pub async fn serve(listener: TcpListener , config : ServerConfig) {
                 .header(field::LOCATION, i.trim_end_matches("/info/refs"))
                 .body(b"Only allowed git > 2.x")
                 .finish();
-              stream.write_all(&res.get()).await;
+              _ = stream.write_all(&res.get()).await;
             }
           }
 
@@ -66,7 +66,7 @@ pub async fn serve(listener: TcpListener , config : ServerConfig) {
               .status(404)
               .status_text("Not Found")
               .finish();
-            stream.write_all(&res.get()).await;
+            _ = stream.write_all(&res.get()).await;
           }
         }
       }
